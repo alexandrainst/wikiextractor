@@ -661,6 +661,7 @@ def main():
             "Orsa",
             "Leo",
             "Aortaforsnævring",
+            "Solar plexus",
         ]
         for key in delete_keys:
             d.pop(key, None)
