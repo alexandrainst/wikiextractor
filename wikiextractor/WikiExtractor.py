@@ -63,7 +63,7 @@ from io import StringIO
 from multiprocessing import Queue, get_context, cpu_count
 from timeit import default_timer
 
-from .extract import Extractor, ignoreTag, define_template, acceptedNamespaces
+from wikiextractor.extract import Extractor, ignoreTag, define_template, acceptedNamespaces
 
 # ===========================================================================
 
@@ -110,6 +110,9 @@ modules = {
 
 # ------------------------------------------------------------------------------
 # Output
+
+
+redirects = {}
 
 
 class NextFile():
@@ -314,6 +317,15 @@ def collect_pages(text):
             inText = True
             line = line[m.start(3):m.end(3)]
             page.append(line)
+
+            # If the line contains a redirect, extract the target using regex
+            redirect_match = re.search(r'#REDIRECT \[\[(.+=?)\]\]', line.strip(), re.IGNORECASE)
+            if redirect_match:
+                redirect_target = redirect_match.group(1)
+                redirects[title] = redirect_target
+                # You can now use redirect_target as needed, e.g., print or store it
+
+
             if m.lastindex == 4:  # open-close
                 inText = False
         elif tag == '/text':
@@ -638,6 +650,40 @@ def main():
 
     process_dump(input_file, args.templates, output_path, file_size,
                  args.compress, args.processes, args.html_safe, not args.no_templates)
+
+
+    import json
+
+    def _delete_keys(d: dict) -> dict:
+        delete_keys = [
+            "Lys",
+            "Ik",
+            "Orsa",
+            "Leo",
+            "Aortaforsnævring",
+        ]
+        for key in delete_keys:
+            d.pop(key, None)
+        return d
+
+    def _capitalize(string: str) -> str:
+        return string[0].upper() + string[1:]
+
+    def _capitalize_dict(d: dict) -> dict:
+        return {_capitalize(k): _capitalize(v) for k, v in d.items()}
+
+    def process_dict(d: dict) -> dict:
+        d = _capitalize_dict(d)
+        d = _delete_keys(d)
+        return d
+
+    redirects_processed = process_dict(d=redirects)
+
+    with open('../wiki_expanded/data/raw/redirects.json', 'w', encoding='utf-8') as f:
+        json.dump(redirects_processed, f, ensure_ascii=False, indent=2)
+
+
+
 
 if __name__ == '__main__':
     main()

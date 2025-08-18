@@ -1209,6 +1209,25 @@ class Extractor():
             self.template_title_errs += 1
             return ''
 
+        def _delete_keys(d):
+            delete_keys = [
+                "Lys"
+            ]
+
+        def _capitalize(string: str) -> str:
+            return string[0].upper() + string[1:]
+
+        def _capitalize_dict(d: dict) -> dict:
+            return {_capitalize(k): _capitalize(v) for k, v in d.items()}
+
+        def process_dict(d: dict) -> dict:
+            d = _capitalize_dict(d)
+            d = _delete_keys(d)
+            return d
+
+        with open('redirect.json', 'w', encoding='utf-8') as f:
+            json.dump(redirects, f, ensure_ascii=False, indent=2)
+
         redirected = redirects.get(title)
         if redirected:
             title = redirected
@@ -1857,3 +1876,6 @@ def define_template(title, page):
         if title in templates and templates[title] != text:
             logging.warn('Redefining: %s', title)
         templates[title] = text
+
+
+
