@@ -186,7 +186,7 @@ listItem = {'*': '<li>%s</li>', '#': '<li>%s</<li>', ';': '<dt>%s</dt>',
             ':': '<dd>%s</dd>'}
 
 
-def compact(text, mark_headers=False):
+def compact(text, mark_headers=True):
     """Deal with headers, lists, empty sections, residuals of tables.
     :param text: convert to HTML
     """
@@ -216,7 +216,10 @@ def compact(text, mark_headers=False):
                 title += '.'
 
             if mark_headers:
-                title = "## " + title
+                def count_leading_equals(string: str) -> int:
+                    return len(string) - len(string.lstrip('='))
+                n_equals = count_leading_equals(line)
+                title = "#" * n_equals + " " + title
 
             headers[lev] = title
             # drop previous headers
@@ -943,7 +946,7 @@ class Extractor():
         self.recursion_exceeded_3_errs = 0  # parameter recursion
         self.template_title_errs = 0
 
-    def clean_text(self, text, mark_headers=False, expand_templates=True,
+    def clean_text(self, text, mark_headers=True, expand_templates=True,
                    html_safe=True):
         """
         :param mark_headers: True to distinguish headers from paragraphs
