@@ -212,8 +212,10 @@ def compact(text, mark_headers=True):
             lev = len(m.group(1))
             if Extractor.HtmlFormatting:
                 page.append("<h%d>%s</h%d>" % (lev, title, lev))
-            if title and title[-1] not in '!?':
-                title += '.'
+            # if title and title[-1] not in '!?':
+            #     title += '.'
+            if title and title[-1] in [".", "!", "?"]:
+                title = title[:-1]
 
             if mark_headers:
                 def count_leading_equals(string: str) -> int:
@@ -239,6 +241,15 @@ def compact(text, mark_headers=True):
         # handle lists
         # @see https://www.mediawiki.org/wiki/Help:Formatting
         elif line[0] in '*#;':
+            # Add pending headers before processing list items
+            if len(headers):
+                if Extractor.keepSections:
+                    items = sorted(headers.items())
+                    for (i, v) in items:
+                        page.append(v)
+                headers.clear()
+                emptySection = False
+            
             if Extractor.HtmlFormatting:
                 # close extra levels
                 l = 0
@@ -262,7 +273,9 @@ def compact(text, mark_headers=True):
                     line = line[l:].strip()
                 page.append(listItem[type] % line)
             else:
-                continue
+                if not line.lstrip('*#;').lower().startswith('redirect'):
+                    bullet_point_line = f"- {line.lstrip('*#; ')}"
+                    page.append(bullet_point_line) # fix for bullet points
         elif len(listLevel):    # implies Extractor.HtmlFormatting
             for c in reversed(listLevel):
                 page.append(listClose[c])
@@ -1182,6 +1195,8 @@ class Extractor():
         # title is the portion before the first |
         logging.debug('TITLE %s', parts[0].strip())
         title = self.expandTemplates(parts[0].strip())
+        if title.lower().startswith('image label'):
+            return ''
 
         # SUBST
         # Apply the template tag to parameters without
